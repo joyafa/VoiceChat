@@ -52,9 +52,12 @@
         <image name="ID_IMAGE_toolbar_pushed" value=".\image\toolBar\toolbar_pushed.png" loadType="file" style="default" />
     </type_image>
     <type_id>
-	 <id name="ID_Window_Btn_CloseWindow" value="100" />
-         <id name="ID_Window_Btn_ACCEPT" value="101" />
-         <id name="ID_Window_Btn_REJECT" value="102" />
+	 <id name="ID_Window_Btn_CloseWindow" value="100" description="窗口关闭"/>
+         <id name="ID_Window_Btn_ACCEPT"  value="101" description="接听按钮"/>
+         <id name="ID_Window_Btn_REJECT"  value="102" description="挂断按钮"/>
+         <id name="IDC_CALLER_IP"         value="103" description="来电IP"/>
+         <id name="IDC_CALLER_NAME"       value="104" description="来电机器名称"/>
+         <id name="IDC_CALLER_TIME"       value="105" description="通话时长"/>
     </type_id>
     <type_font>
         <font name="ID_FONT_1" value="Courier New" size="9" />

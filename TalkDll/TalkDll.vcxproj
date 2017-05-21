@@ -212,7 +212,6 @@ copy /Y $(OutDir)$(TargetName)D.lib ..\lib</Command>
     <ClInclude Include="head.h" />
     <ClInclude Include="Interface.h" />
     <ClInclude Include="ListenSocket.h" />
-    <ClInclude Include="Log.hpp" />
     <ClInclude Include="MyWaveIn.h" />
     <ClInclude Include="RecSocket.h" />
     <ClInclude Include="Resource.h" />

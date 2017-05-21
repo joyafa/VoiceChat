@@ -4,7 +4,10 @@
 #include "MCIPlayMusic\MCIPlayMusic.h"
 #include "TrayEx.h"
 #include "ServiceInterface.h"
-#include "IncommingWindow.h"
+#include "IncomingWindow.h"
+#include <map>
+
+using namespace std;
 
 enum CallStatus
 {
@@ -24,13 +27,7 @@ struct _tagCallFrom
 	bool bAcceptCall;
 };
 
-struct CallingInfo
-{
-	char szClientIpAddress[64]; //IP地址
-	char szClientName[512];     //机器名称
-	char szBeginTime;           //通话开始时间 hh:mm:ss'ms
-	int  nLastTime;             //通话持续时长
-};
+
 
 
 class CServerWindow
@@ -38,11 +35,19 @@ class CServerWindow
 public:
 	CServerWindow();
 	void Release();
-	CString GetMoudleConfigFilePath();
+
+	//************************************
+	// Method:    GetConfigInfo
+	// FullName:  CServerWindow::GetConfigInfo
+	// Access:    public 
+	// Returns:   void
+	// Description: 获取配置文件信息
+	//************************************
 	void GetConfigInfo();
 	void Create();
 
 
+	int OnWndTimer(UINT nIDEvent, BOOL *pbHandled);
 	int OnTreeSelect(int m_nItem, BOOL *pbHandled);
 	
 	int OnTreeExpand(int id, BOOL bExpand, BOOL *pbHandled);
@@ -52,24 +57,105 @@ public:
 	int  OnTemplateDestroy(tree_item_i *pItem, BOOL *pbHandled);
 	
 	int  OnTemplateAdjustCoordinate(tree_item_i *pItem, BOOL *pbHandled);
-
 	
+	//************************************
+	// Method:    OnCloseWindow
+	// FullName:  CServerWindow::OnCloseWindow
+	// Access:    public 
+	// Returns:   int
+	// Description: 关闭窗口
+	// Parameter: BOOL * pbHandled
+	//************************************
 	int OnCloseWindow(BOOL * pbHandled);
+
 	//usb(响应处理)
 	int OnHandlePhone(WPARAM wParam, LPARAM lParam, BOOL *pbHandled);
+
 	bool AcceptCallFrom(const char* pIpAndName);
+	//************************************
+	// Method:    OnStopMusic
+	// FullName:  CServerWindow::OnStopMusic
+	// Access:    public 
+	// Returns:   int
+	// Description: 停止播放声音
+	// Parameter: WPARAM wParam
+	// Parameter: LPARAM lParam
+	// Parameter: BOOL * pbHandled
+	//************************************
 	int OnStopMusic(WPARAM wParam, LPARAM lParam, BOOL *pbHandled);
+
 	int OnMCINotify(WPARAM wParam, LPARAM lParam, BOOL *pbHandled);
 
+	//************************************
+	// Method:    PlaySound
+	// FullName:  CServerWindow::PlaySound
+	// Access:    public 
+	// Returns:   void
+	// Description: 播放路径的声音文件
+	// Parameter: const CString & strSonndPath
+	//************************************
 	void PlaySound(const CString &strSonndPath);
-	void InsertItemData();
 
+	//************************************
+	// Method:    InsertItemData
+	// FullName:  CServerWindow::InsertItemData
+	// Access:    public 
+	// Returns:   int
+	// Description: 
+	// Parameter: const char * pComputerName
+	// Parameter: const char * pIp
+	//************************************
+	int InsertItemData(const char *pComputerName, const char *pIp);
+
+
+	//************************************
+	// Method:    InsertCallingInfo
+	// FullName:  CServerWindow::InsertCallingInfo
+	// Access:    public 
+	// Returns:   bool
+	// Description: 记录通话信息,方便后续界面显示提示信息时候使用
+	// Parameter: int nIndex
+	// Parameter: const CallingInfo * info
+	//************************************
+	bool InsertCallingInfo(int nIndex, const CallingInfo &info)
+	{
+		//TODO:加锁保护;
+		//map: key:下标, value:CallingInfo
+		return m_mapCallInfo.insert(pair<int, CallingInfo>(nIndex, info)).second;
+	}
+
+	//************************************
+	// Method:    GetCallingInfo
+	// FullName:  CServerWindow::GetCallingInfo
+	// Access:    public 
+	// Returns:   CallingInfo &
+	// Description: 通过list界面显示的序号,获取信息
+	// Parameter: int nIndex
+	//************************************
+	CallingInfo &GetCallingInfo(int nIndex)
+	{
+		//TODO:加锁保护;
+		//map: key:下标, value:CallingInfo
+		map<int, CallingInfo>::iterator it = m_mapCallInfo.find(nIndex);
+		if (it == m_mapCallInfo.end())
+		{
+			throw "Key not found!!!!";
+		}
+
+		//返回引用,可以更新数据
+		return it->second;
+	}
+
+
+	//************************************
+	// Method:    AddTray
+	// FullName:  CServerWindow::AddTray
+	// Access:    public 
+	// Returns:   void
+	// Qualifier: 增加系统托盘
+	//************************************
 	void AddTray();
 	
-	HWINDOW &GetHWindow()
-	{
-		return m_hWindow;
-	}
 public:
 	//CIncommingDialog *m_pIncommingDlg;
 	//被叫事件: 0:接听事件;1:挂断事件
@@ -80,10 +166,11 @@ public:
 	CallStatus m_callStatus;
 	CServiceInterface m_talk;
 	HWINDOW m_hWindow;
-	CString m_strCallingInfo;
+	int m_nItem;
+	//来电提醒对话框
+	CIncomingWindow *m_pIncomingDlg;
 
 private:
-	int m_nItem;
 	HELE    m_hTree;
 	HIMAGE  m_hVip;
 	HIMAGE  m_hQZone;
@@ -93,11 +180,7 @@ private:
 	HTEMP  m_pTemplate_sel;
 	HXCGUI m_hAdapterTree;
 	CTrayEx m_TrayEx;	
-
 	
-	CString	m_name;
-	//ip name time  list显示使用
-
 	//硬件PID,VID
 	DWORD m_dwPID;
 	DWORD m_dwVID;
@@ -111,8 +194,9 @@ private:
 
 	CMCIPlayMusic m_mciMusic;
 	CUsbDevice *m_pUsbDevice;
-	CIncommingWindow *m_pIncommingDlg;
 
+	//记录通话信息
+	map<int, CallingInfo>m_mapCallInfo;
 };
 
 

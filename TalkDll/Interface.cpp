@@ -321,19 +321,10 @@ Exit:
 
 BOOL CInterface::IncomingCall(CString ip)
 {
-	if(m_CallBackFun!=0)
+	if(m_CallBackFun)
 	{
-		m_CallBackFun(MSG_CallIn,"来电...");
+		m_CallBackFun(MSG_CallIn, "来电...");
 	}
-	////是否接听
-	//if (IDYES ==  MessageBox(NULL,"talk?","talk",MB_YESNO))
-	//{
-	//	return TRUE;
-	//}
-	//else
-	//{
-	//	return FALSE;
-	//}
 	
 	return TRUE;
 }

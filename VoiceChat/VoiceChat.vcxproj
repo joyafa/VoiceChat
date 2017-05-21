@@ -160,7 +160,7 @@
     <ClInclude Include="hardware\hidsdi.h" />
     <ClInclude Include="hardware\hidusage.h" />
     <ClInclude Include="hardware\UsbDevice.h" />
-    <ClInclude Include="IncommingWindow.h" />
+    <ClInclude Include="IncomingWindow.h" />
     <ClInclude Include="MCIPlayMusic\MCIPlayMusic.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="ServerWindow.h" />
@@ -172,8 +172,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="hardware\UsbDevice.cpp" />
-    <ClCompile Include="IncommingWindow.cpp" />
+    <ClCompile Include="IncomingWindow.cpp" />
     <ClCompile Include="MCIPlayMusic\MCIPlayMusic.cpp" />
+    <ClCompile Include="PublicKit.cpp" />
     <ClCompile Include="ServerWindow.cpp" />
     <ClCompile Include="ServiceInterface.cpp" />
     <ClCompile Include="stdafx.cpp">

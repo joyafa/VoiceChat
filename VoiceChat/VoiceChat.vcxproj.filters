@@ -63,7 +63,7 @@
     <ClInclude Include="MCIPlayMusic\MCIPlayMusic.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="IncommingWindow.h">
+    <ClInclude Include="IncomingWindow.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
@@ -89,7 +89,10 @@
     <ClCompile Include="MCIPlayMusic\MCIPlayMusic.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="IncommingWindow.cpp">
+    <ClCompile Include="PublicKit.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="IncomingWindow.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>

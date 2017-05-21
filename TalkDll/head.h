@@ -23,7 +23,7 @@ struct TalkFrame
 
 //通话端口
 #define TALK_COM_PORT 19345
-
+//接收到新来的通话连接
 #define TC_NORMAL_TALK	0x1000
 #define TC_AGREE_TALK	0x1001
 #define TC_DISAGREE_TALK	0x1002

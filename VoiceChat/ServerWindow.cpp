@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "ServerWindow.h"
 #include <mmsystem.h>
+#include "PublicKit.h"
 
 #define  XC_LNAME    L"name"
 #define  XC_LNAME1   L"name"
@@ -25,7 +26,7 @@ CServerWindow::CServerWindow()
 	, m_pTemplate_sel(NULL)
 	, m_hAdapterTree(NULL)
 	, m_callStatus(INITIAL)
-	, m_pIncommingDlg(NULL)
+	, m_pIncomingDlg(NULL)
 	, m_pUsbDevice(NULL)
 {
 }
@@ -35,29 +36,6 @@ void CServerWindow::Release()
 	if (m_pTemplate_group) XTemp_Destroy(m_pTemplate_group);
 }
 
-
-CString CServerWindow::GetMoudleConfigFilePath()
-{
-	TCHAR _szPath[MAX_PATH + 1] = { 0 };
-	GetModuleFileName(NULL, _szPath, MAX_PATH);
-	(_tcsrchr(_szPath, _T('\\')))[1] = 0;//删除文件名，只获得路径 字串  
-	string strPath;
-	for (int n = 0; _szPath[n]; n++)
-	{
-		if (_szPath[n] != _T('\\'))
-		{
-			strPath += _szPath[n];
-		}
-		else
-		{
-			strPath += _T("\\\\");
-		}
-	}
-
-	strcat(_szPath, "ini");
-
-	return _szPath;
-}
 
 void CServerWindow::GetConfigInfo()
 {
@@ -127,16 +105,17 @@ void CServerWindow::Create()
 	XWnd_AdjustLayout(m_hWindow);
 	XWnd_ShowWindow(m_hWindow, SW_SHOW);
 
+	//创建来电对话框,暂时不显示
+	m_pIncomingDlg = new CIncomingWindow(this);
+	m_pIncomingDlg->Create(hXCGUI);
+
 	//被叫事件
 	m_hAcceptCallEvents[0] = CreateEventA(NULL, TRUE, FALSE, NULL);//接听事件
 	m_hAcceptCallEvents[1] = CreateEventA(NULL, TRUE, FALSE, NULL);//挂断事件
 
-	m_pIncommingDlg = new CIncommingWindow(this);
-	m_pIncommingDlg->Create((HXCGUI &)(GetHWindow()));
-	XWnd_ShowWindow(m_pIncommingDlg->m_hWindow, SW_HIDE);
-
-	int ServiceCallBack(int type, char *p);
+	int ServiceCallBack(int type, const char *pInfo);
 	m_talk.Ini(ServiceCallBack);
+	//TODO:界面上显示一下本机的IP 和 名字
 	/*string strName, strIpAddress;
 	bool bRet = m_talk.GetLocalIpAddress(strName, strIpAddress);
 	if (bRet)
@@ -156,12 +135,31 @@ void CServerWindow::Create()
 	m_pUsbDevice->SetOwner(XWnd_GetHWND(m_hWindow));
 	m_pUsbDevice->ConnectDevice();
 	m_pUsbDevice->StartMonitor();
+	XWnd_RegEventCPP(m_hWindow, WM_TIMER, &CServerWindow::OnWndTimer);
 
-	XWnd_SetTimer(m_hWindow, 990, 100);
+	XWnd_SetTimer(m_hWindow, 990, 5000);
 }
 
+int CServerWindow::OnWndTimer(UINT nIDEvent, BOOL *pbHandled)
+{
+	if (990 == nIDEvent)
+	{
+		XWnd_ShowWindow(m_pIncomingDlg->m_hWindow, SW_NORMAL);//显示窗口
 
+		CRect rect;
+		XWnd_GetClientRect(m_hWindow, &rect);
+		CRect rectIncomming;
+		XWnd_GetClientRect(m_pIncomingDlg->m_hWindow, &rectIncomming);
+		rectIncomming.left  = rect.right;
+		rectIncomming.right = rectIncomming.left + rectIncomming.Width();
+		rectIncomming.top   = rect.top + rect.Height() / 2 - rectIncomming.Height() / 2;
+		rectIncomming.bottom = rectIncomming.top + rectIncomming.Height();
+		XWnd_RedrawWndRect(m_pIncomingDlg->m_hWindow, rectIncomming, TRUE);
+		*pbHandled = TRUE;
+	}
 
+	return 0;
+}
 
 
 int CServerWindow::OnTreeSelect(int m_nItem, BOOL *pbHandled)
@@ -274,24 +272,8 @@ int CServerWindow::OnHandlePhone(WPARAM wParam, LPARAM lParam, BOOL *pbHandled)
 			//挂断 hangup
 			m_talk.End();
 			m_callStatus = INITIAL;
-
-			{
-				CString strCallingTime;
-				//m_pIncommingDlg->UpdataWindow(strCallingTime);
-				SYSTEMTIME st;
-				GetLocalTime(&st);
-				m_strCallingInfo.Format("%s\n结束:%04d-%02d-%02d %02d:%02d:%02d'%03d\n时长:%s",
-					m_strCallingInfo.GetString(),
-					st.wYear,
-					st.wMonth,
-					st.wDay,
-					st.wHour,
-					st.wMinute,
-					st.wSecond,
-					st.wMilliseconds,
-					strCallingTime.GetString());
-				//m_listClient.AddNewUser(m_strCallingInfo);
-			}
+			CallingInfo &info = GetCallingInfo(m_nItem - 1);
+			m_pIncomingDlg->UpdataWindow(info);
 		}
 		else if (ACCEPTING == m_callStatus)//来电响铃...
 		{
@@ -330,7 +312,7 @@ UINT __stdcall AcceptCallFunc(void *pvoid)
 		ResetEvent(pDlag->m_hAcceptCallEvents[0]);
 
 		pDlag->m_callStatus = ONLINE;
-		pFrom->bAcceptCall = true;
+		pFrom->bAcceptCall  = true;
 	}
 	else  //挂断事件,超时停止 或 异常 都停止
 	{
@@ -392,30 +374,36 @@ int   MessageLoop(
 }
 
 extern CServerWindow g_hWindow;
-int ServiceCallBack(int type, char *p)
+int ServiceCallBack(int type, const char *pInfo)
 {
 	switch (type)
 	{
 	case MSG_ADDCLIENTUSER:
 		//名字;IP
 	{
-		SYSTEMTIME st;
-		GetLocalTime(&st);
-		g_hWindow.m_strCallingInfo.Format("%s开始:%04d-%02d-%02d %02d:%02d:%02d'%03d",
-			p, //机器名\nip
-			st.wYear,
-			st.wMonth,
-			st.wDay,
-			st.wHour,
-			st.wMinute,
-			st.wSecond,
-			st.wMilliseconds);
-		g_hWindow.InsertItemData();
+		CallingInfo info;
+		info.nBeginTime = GetCurrentTimeL();
+		string strIp, strName;
+		if (pInfo)
+		{
+			SplitIpAndName(pInfo, strIp, strName);
+			sprintf(info.szClientIpAddress, strIp.c_str());
+			sprintf(info.szClientName, strName.c_str());
+		}
+		//list显示新来电信息
+		int nIndex = g_hWindow.InsertItemData(strName.c_str(), strIp.c_str());
+		//向量中缓存来电信息,方便在tooltip以及通话结束时记录通话时长
+		//多线程
+		if (-1 != nIndex)
+		{
+			//map: key:下标, value:CallingInfo
+			g_hWindow.InsertCallingInfo(nIndex, info);
+		}
 	}
 	break;
 	case MSG_CallIn:
-		//来电,同步等待完成
-		return g_hWindow.AcceptCallFrom(p);
+		//来电,同步等待完成,传入的是IP name信息
+		return g_hWindow.AcceptCallFrom(pInfo);
 	case MSG_CallOk:
 	{
 		//TODO:
@@ -426,39 +414,38 @@ int ServiceCallBack(int type, char *p)
 	}
 	break;
 	case MSG_CallClose:
-		//客户端主动挂掉电话消息
+		//客户端主动挂掉电话消息,还未接听
 		if (g_hWindow.m_callStatus == ACCEPTING)
 		{
 			SetEvent(g_hWindow.m_hAcceptCallEvents[1]);
 		}
-		//TODO: 会多显示一次断开时间
-		/*CString strCallingTime;
-		g_hWindow.m_pIncommingDlg->UpdataWindow(strCallingTime);*/
-		if (g_hWindow.m_callStatus == ONLINE)
+		try
 		{
-
-			SYSTEMTIME st;
-			GetLocalTime(&st);
-			//TODO
-			/*g_hWindow.m_strCallingInfo.Format("%s\n结束:%04d-%02d-%02d %02d:%02d:%02d'%03d\n时长:%s",
-				g_hWindow.m_strCallingInfo.GetString(),
-				st.wYear,
-				st.wMonth,
-				st.wDay,
-				st.wHour,
-				st.wMinute,
-				st.wSecond,
-				st.wMilliseconds,
-				strCallingTime.GetString());*/
-			g_hWindow.InsertItemData();
+			CallingInfo &info = g_hWindow.GetCallingInfo(g_hWindow.m_nItem - 1);
+			info.nEndTime = GetCurrentTimeL();
+			g_hWindow.m_pIncomingDlg->UpdataWindow(info);
 		}
-		//TODO:
+		catch (string &e)
+		{
+			//TODO:
+			//LOG_INFO
+		}
+		//TODO: 会多显示一次断开时间
+		//CString strCallingTime;
+
+		//已接听,挂断
+		//if (g_hWindow.m_callStatus == ONLINE)
+		//{
+			
+		//}
+		//TODO:指定位置显示一下 执行状态的变化
 		//g_hWindow.SetWindowText("呼叫:服务端");
 		break;
 	}
 
 	return 0;
 }
+
 
 
 bool CServerWindow::AcceptCallFrom(const char* pIpAndName)
@@ -468,42 +455,26 @@ bool CServerWindow::AcceptCallFrom(const char* pIpAndName)
 
 	bool bAcceptCall(false);
 
+	CallingInfo info;
 	string strIp, strName;
 	if (pIpAndName)
 	{
-		//TODO
-		//SplitIpAndName(pIpAndName, strIp, strName);
+		SplitIpAndName(pIpAndName, strIp, strName);
+		sprintf(info.szClientIpAddress, strIp.c_str());
+		sprintf(info.szClientName, strName.c_str());
 	}
 
-	if (m_pIncommingDlg)
+	if (m_pIncomingDlg)
 	{
-		//TODO
-		/*m_pIncommingDlg->SetDlgItemText(IDC_STATIC_IPADDRESS, strIp.c_str());
-		m_pIncommingDlg->SetDlgItemText(IDC_STATIC_COMPUTERNAME, strName.c_str());
-		m_pIncommingDlg->SetDlgItemText(IDC_STATIC_TALKTIME, "00:00:00");
-		m_pIncommingDlg->m_dwCounts = GetTickCount();
-		m_pIncommingDlg->ShowWindow(SW_SHOW);
-		m_pIncommingDlg->CenterWindow();*/
-		/*CRect rect;
-		GetClientRect(&rect);
-		CRect rectIncommingRect;
-		::GetClientRect(m_pIncommingDlg->m_hWnd, &rectIncommingRect);
-		ClientToScreen(&rect);
-		ClientToScreen(&rectIncommingRect);
-		CString strLog;
-		strLog.Format("rec:%d %d %d %d %d %d %d %d\n", rect.left, rect.right, rect.Width(), rect.Height(), rectIncommingRect.left, rectIncommingRect.right, rectIncommingRect.Width(), rectIncommingRect.Height());
-		OutputDebugString(strLog);
-		::MoveWindow(m_pIncommingDlg->m_hWnd, rect.left - rectIncommingRect.Width(), rect.top + rect.Height() / 2 - 100, rectIncommingRect.Width(), rectIncommingRect.Height(), TRUE);
-		*/
-		//	strLog.Format("rec:%d %d %d %d %d %d %d %d\n", rect.left, rect.right, rect.Width(), rect.Height(), rectIncommingRect.left, rectIncommingRect.right, rectIncommingRect.Width(), rectIncommingRect.Height());
-		//	OutputDebugString(strLog);
+		//显示来电界面:有来电,只显示IP,名字,接听挂断按钮
+		m_pIncomingDlg->UpdataWindow(info, true);
 	}
+
 	//创建播放声音线程
-	//TODO:显示提示来电提醒对话框
 	_tagCallFrom *pFrom = new _tagCallFrom;
-	pFrom->strIpName = pIpAndName;
-	pFrom->pWindow = this;
-	pFrom->bAcceptCall = false;
+	pFrom->strIpName    = pIpAndName;
+	pFrom->pWindow      = this;
+	pFrom->bAcceptCall  = false;
 
 	//状态1: 新来电，可以 接听 or 挂断
 	//状态2: 通话中,可以挂断;
@@ -520,14 +491,23 @@ bool CServerWindow::AcceptCallFrom(const char* pIpAndName)
 }
 
 
-void CServerWindow::InsertItemData()
+int CServerWindow::InsertItemData(const char *pComputerName, const char *pIp)
 {
+	if (NULL == pComputerName || NULL == pIp)
+	{
+		return -1;
+	}
+
 	wchar_t  buf[256] = { 0 };
-	wsprintfW(buf, L"机器名-%d", m_nItem);
+	wsprintfW(buf, L"机器名:%s", pComputerName);
 	m_nItem = XAdTree_InsertItemText(m_hAdapterTree, buf, 0, XC_ID_LAST);
+	wsprintfW(buf, L"IP:%s", pIp);
 	XAdTree_SetItemTextEx(m_hAdapterTree, m_nItem, XC_LNAME2, L"IP");
 	XAdTree_SetItemImageEx(m_hAdapterTree, m_nItem, XC_LNAME3, m_hAvatar);
 	XAdTree_SetItemImageEx(m_hAdapterTree, m_nItem, XC_LNAME4, m_hAvatarLarge);
-	m_nItem++;
+	
+	//TODO:通过m_nItem进行信息的索引,存到map中,然后根据数组下标查找对应,因为一个时刻只会有一个账号在线,所以可以这么简单处理
+
+	return m_nItem++;
 }
 

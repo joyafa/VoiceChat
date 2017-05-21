@@ -75,7 +75,7 @@ using namespace std;
 #define AFX_EXT_CLASS       __declspec(dllimport)
 #endif
 
-typedef	 int ( *_CallBackFun)(int iflag,char *buf);
+typedef	 int ( *_CallBackFun)(int iflag, const char *pInfo);
 class AFX_EXT_CLASS CInterface
 {
 public:

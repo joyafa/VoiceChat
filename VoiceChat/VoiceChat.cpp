@@ -3,29 +3,47 @@
 
 #include "stdafx.h"
 #include "VoiceChat.h"
-#include "IncommingWindow.h"
 
 CServerWindow g_hWindow;
 HINSTANCE g_hInstance = NULL;
 
 int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCmdLine, int nCmdShow)
 {
-	g_hInstance = hInstance;
-	
-	XInitXCGUI(); //初始化
-	
-	g_hWindow.Create();
-	
-	for (int i=0;i<100;i++)
+	//只允许一个进程
+	HANDLE hMutex = CreateMutex(NULL, TRUE, "VoiceChat");
+	DWORD dwRet = GetLastError();
+	if (hMutex)
 	{
-		g_hWindow.InsertItemData();
+		if (ERROR_ALREADY_EXISTS == dwRet)
+		{
+			XTRACE("程序已经在运行中了,程序退出!\n");
+			CloseHandle(hMutex);
+			
+			return 0;
+		}
 	}
+	else
+	{
+		XTRACE("创建互斥量错误,程序退出!\n");
+		CloseHandle(hMutex);
+
+		return 0;
+	}
+
+	g_hInstance = hInstance;
+	//初始化
+	XInitXCGUI(); 
+
+	//创建主界面
+	g_hWindow.Create();
+
 	XRunXCGUI(); //运行
+
 	g_hWindow.Release();
+
 	XExitXCGUI(); //释放资源
 	
+	CloseHandle(hMutex);
+
 	return 0;
 }
-
-//注册函数进去, 
-//messageloop,放置堵塞

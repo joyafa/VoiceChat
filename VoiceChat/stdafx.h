@@ -20,5 +20,5 @@
 #include <atlstr.h>
 #include "xcgui.h"
 
-#define TRACE 
+//#define TRACE 
 // TODO:  在此处引用程序需要的其他头文件

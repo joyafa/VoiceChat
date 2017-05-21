@@ -109,9 +109,6 @@
     <ClInclude Include="WaveOut.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Log.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\util\Log.h">
       <Filter>log</Filter>
     </ClInclude>
