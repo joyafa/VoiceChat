@@ -142,6 +142,7 @@ void CServerWindow::Create()
 
 int CServerWindow::OnWndTimer(UINT nIDEvent, BOOL *pbHandled)
 {
+	return 0;
 	if (990 == nIDEvent)
 	{
 		XWnd_ShowWindow(m_pIncomingDlg->m_hWindow, SW_NORMAL);//显示窗口
@@ -162,7 +163,7 @@ int CServerWindow::OnWndTimer(UINT nIDEvent, BOOL *pbHandled)
 }
 
 
-int CServerWindow::OnTreeSelect(int m_nItem, BOOL *pbHandled)
+int CServerWindow::OnTreeSelect(int nItem, BOOL *pbHandled)
 {
 	*pbHandled = TRUE;
 	return 0;
@@ -229,7 +230,7 @@ void CServerWindow::PlaySound(const CString &strSonndPath)
 	//先停掉原有的声音
 	m_mciMusic.stop();
 
-	DWORD dwResult = m_mciMusic.play(m_hWindow, strSonndPath);
+	DWORD dwResult = m_mciMusic.play(XWnd_GetHWND(m_hWindow), strSonndPath);
 	if (dwResult != 0)
 	{
 		//beatLog_Error(("CServiceTalkDlg", __FUNCDNAME__, "Play sound failed: %s", m_mciMusic.getErrorMsg(dwResult)));
@@ -505,7 +506,9 @@ int CServerWindow::InsertItemData(const char *pComputerName, const char *pIp)
 	XAdTree_SetItemTextEx(m_hAdapterTree, m_nItem, XC_LNAME2, L"IP");
 	XAdTree_SetItemImageEx(m_hAdapterTree, m_nItem, XC_LNAME3, m_hAvatar);
 	XAdTree_SetItemImageEx(m_hAdapterTree, m_nItem, XC_LNAME4, m_hAvatarLarge);
-	
+	//HELE hItem = (HELE)XTree_GetTemplateObject((HELE)m_hTree, m_nItem, 2);
+
+	//XEle_SetToolTip(hItem, L"通话时长:10:00:23\nIP:127.0.0.1\nJoyafa");
 	//TODO:通过m_nItem进行信息的索引,存到map中,然后根据数组下标查找对应,因为一个时刻只会有一个账号在线,所以可以这么简单处理
 
 	return m_nItem++;

@@ -19,7 +19,7 @@ CString GetMoudleConfigFilePath()
 {
 	TCHAR _szPath[MAX_PATH + 1] = { 0 };
 	GetModuleFileName(NULL, _szPath, MAX_PATH);
-	(_tcsrchr(_szPath, _T('\\')))[1] = 0;//删除文件名，只获得路径 字串  
+	(strstr(_szPath, _T(".exe")))[1] = 0;//删除文件名，只获得路径 字串  
 	string strPath;
 	for (int n = 0; _szPath[n]; n++)
 	{

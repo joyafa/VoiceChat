@@ -36,6 +36,13 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCm
 
 	//创建主界面
 	g_hWindow.Create();
+	/*g_hWindow.InsertItemData("wind", "192.168.10.75");
+	g_hWindow.InsertItemData("china", "192.168.10.11");
+	g_hWindow.InsertItemData("good", "192.168.10.22");
+	g_hWindow.InsertItemData("myself", "192.168.10.33");
+	g_hWindow.InsertItemData("joyafa", "192.168.10.44");*/
+
+	//XEle_SetToolTip();
 
 	XRunXCGUI(); //运行
 

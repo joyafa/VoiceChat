@@ -68,7 +68,7 @@ DWORD CMCIPlayMusic::closeDevice()
 	return dwResult;  
 }  
 
-DWORD CMCIPlayMusic::play(HWINDOW hWindow,LPCTSTR pFileName)
+DWORD CMCIPlayMusic::play(HWND hWnd,LPCTSTR pFileName)
 {  
 	if (m_nElementID == 0)  
 	{  
@@ -98,7 +98,7 @@ DWORD CMCIPlayMusic::play(HWINDOW hWindow,LPCTSTR pFileName)
 	MCI_PLAY_PARMS mciPlayParms;  
 
 	//set the window that will receive notification message  
-	mciPlayParms.dwCallback = (DWORD)hWindow;
+	mciPlayParms.dwCallback = (DWORD)hWnd;
 
 	//instruct device to play file  
 	DWORD dwResult=mciSendCommand(m_nElementID,MCI_PLAY,  

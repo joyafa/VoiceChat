@@ -23,7 +23,7 @@ public:
 public:  
 	DWORD openDevice();  
 	DWORD closeDevice();  
-	DWORD play(HWINDOW hWindow,LPCTSTR pFileName);
+	DWORD play(HWND hWnd,LPCTSTR pFileName);
 	DWORD stop();  
 	DWORD pause();  
 	DWORD seekToStart();  

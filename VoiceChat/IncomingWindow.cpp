@@ -35,6 +35,9 @@ bool CIncomingWindow::Create(HXCGUI &hParent)
 	XEle_RegEventCPP(m_hBtnAccept, XE_BNCLICK, &CIncomingWindow::OnBnClickedAccept);
 	m_hBtnReject  = (HELE)XC_GetObjectByID(m_hWindow, ID_Window_Btn_REJECT);
 	XEle_RegEventCPP(m_hBtnReject, XE_BNCLICK, &CIncomingWindow::OnBnClickedReject);
+	//TODO:缺省是居中的方式,我需要左对齐,这个换行符还是有效的
+	XEle_SetToolTip(m_hBtnAccept, L"按下接听电话!\n不信你试试;\n我就是不信;\n不信拉倒.");
+	XEle_SetToolTip(m_hBtnReject, L"按下挂断电话!\n不信你试试;\n我就是不信;\n不信拉倒.");
 	//timer
 	XWnd_RegEventCPP(m_hWindow, WM_TIMER, &CIncomingWindow::OnWndTimer);
 	XWnd_ShowWindow( m_hWindow, SW_HIDE);
@@ -60,7 +63,6 @@ int CIncomingWindow::OnBnClickedAccept(BOOL *pbHandled)
 	rectNewPos.bottom= rectNewPos.top + rectRejcetButton.Height();
 
 	XEle_SetRect(m_hBtnReject, &rectNewPos, TRUE);
-
 	XWnd_SetTimer(m_hWindow, TIME_EVENT, 1000);
 
 	m_dwCounts = GetTickCount();
